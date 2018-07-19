@@ -5,7 +5,7 @@ Go stats handler
     :alt: Build Status
     :target: http://travis-ci.org/thoas/stats
 
-stats is a ``net/http`` handler in golang reporting various metrics about
+stats is a ``valyala/fasthttp`` handler in golang reporting various metrics about
 your web application.
 
 This middleware has been developed and required for the need of picfit_,
@@ -16,13 +16,7 @@ Compatibility
 
 This handler supports the following frameworks at the moment:
 
-* `negroni`_
-* `martini`_
-* `gocraft/web <https://github.com/gocraft/web>`_
-* `Gin <https://github.com/gin-gonic/gin>`_
-* `Goji <https://github.com/zenazn/goji>`_
-* `Beego <https://github.com/astaxie/beego>`_
-* `HTTPRouter <https://github.com/julienschmidt/httprouter>`_
+* `fasthttp <https://github.com/valyala/fasthttp>`_
 
 We don't support your favorite Go framework? Send me a PR or
 create a new `issue <https://github.com/thoas/stats/issues>`_ and
@@ -38,84 +32,16 @@ Installation
 
 ::
 
-    go get github.com/thoas/stats
+    go get github.com/tkliner/stats
 
 
 Usage
 -----
 
-Basic net/http
-..............
-
-To use this handler directly with ``net/http``, you need to call the
-middleware with the handler itself:
-
-.. code-block:: go
-
-    package main
-
-    import (
-        "net/http"
-        "github.com/thoas/stats"
-    )
-
-    func main() {
-        h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Content-Type", "application/json")
-            w.Write([]byte("{\"hello\": \"world\"}"))
-        })
-
-        handler := stats.New().Handler(h)
-        http.ListenAndServe(":8080", handler)
-    }
-
-Negroni
+Fasthttp and Fasthttprouter
 .......
 
-If you are using negroni_ you can implement the handler as
-a simple middleware in ``server.go``:
-
-.. code-block:: go
-
-    package main
-
-    import (
-        "net/http"
-        "github.com/codegangsta/negroni"
-        "github.com/thoas/stats"
-        "encoding/json"
-    )
-
-    func main() {
-        middleware := stats.New()
-
-        mux := http.NewServeMux()
-
-        mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Content-Type", "application/json")
-            w.Write([]byte("{\"hello\": \"world\"}"))
-        })
-
-        mux.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Content-Type", "application/json")
-
-            stats := middleware.Data()
-
-            b, _ := json.Marshal(stats)
-
-            w.Write(b)
-        })
-
-        n := negroni.Classic()
-        n.Use(middleware)
-        n.UseHandler(mux)
-        n.Run(":3000")
-    }
-
-HTTPRouter
-.......
-
-If you are using HTTPRouter_ you need to call the middleware with the handler itself:
+If you are using fasthttp_ with Fasthttprouter_ you need to call the middleware with the handler itself:
 
 .. code-block:: go
     
@@ -123,70 +49,24 @@ If you are using HTTPRouter_ you need to call the middleware with the handler it
 
     import (
             "encoding/json"
-            "github.com/julienschmidt/httprouter"
-            "github.com/thoas/stats"
-            "net/http"
+            "github.com/buaazp/fasthttprouter"
+	        "github.com/valyala/fasthttp"
+            "github.com/tkliner/stats"
     )
     
     func main() {
-            router := httprouter.New()
-            s := stats.New()
-            router.GET("/stats", func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-                    w.Header().Set("Content-Type", "application/json; charset=utf-8")
-                    s, err := json.Marshal(s.Data())
-                    if err != nil {
-                            http.Error(w, err.Error(), http.StatusInternalServerError)
-                    }
-                    w.Write(s)
-            })
-            http.ListenAndServe(":8080", s.Handler(router))
-    }
-    
-    
-Martini
-.......
-
-If you are using martini_, you can implement the handler as a wrapper of
-a ``Martini.Context`` in ``server.go``:
-
-
-.. code-block:: go
-
-    package main
-
-    import (
-        "encoding/json"
-        "github.com/go-martini/martini"
-        "github.com/thoas/stats"
-        "net/http"
-    )
-
-    func main() {
-        middleware := stats.New()
-
-        m := martini.Classic()
-        m.Get("/", func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Content-Type", "application/json")
-            w.Write([]byte("{\"hello\": \"world\"}"))
-        })
-        m.Get("/stats", func(w http.ResponseWriter, r *http.Request) {
-            w.Header().Set("Content-Type", "application/json")
-
-            stats := middleware.Data()
-
-            b, _ := json.Marshal(stats)
-
-            w.Write(b)
-        })
-
-        m.Use(func(c martini.Context, w http.ResponseWriter, r *http.Request) {
-            beginning, recorder := middleware.Begin(w)
-
-            c.Next()
-
-            middleware.End(beginning, recorder)
-        })
-        m.Run()
+        router := fasthttprouter.New()
+	    s := stats.New()
+	    router.GET("/stats", func(ctx *fasthttp.RequestCtx) {
+			ctx.Response.Header.Set("Content-Type", "application-json")
+			s, err := json.Marshal(s.Data())
+			if err != nil {
+					log.Fatal("Stats error")
+			}
+			ctx.Write(s)
+			ctx.SetStatusCode(200)
+	    })
+	    log.Fatal(fasthttp.ListenAndServe("localhost:8000", s.Handler(router.Handler)))
     }
 
 Run it in a shell:
@@ -249,3 +129,8 @@ reset requests/sec and will implement new features in a near future :)
 .. _martini: https://github.com/go-martini/martini
 .. _picfit: https://github.com/thoas/picfit
 .. _HTTPRouter: https://github.com/julienschmidt/httprouter
+
+Original package
+----------------
+
+This is fork of the original package `thoas/stats https://github.com/thoas/stats`_, which was created as part of modification to be used with fasthttp and fasthttprouter
