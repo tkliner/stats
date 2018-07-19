@@ -41,7 +41,7 @@ Usage
 Fasthttp and Fasthttprouter
 .......
 
-If you are using fasthttp_ with fasthttprouter_ you need to call the middleware with the handler itself:
+If you are using fasthttp_ with `buaazp/fasthttprouter <https://github.com/buaazp/fasthttprouter>`_ you need to call the middleware with the handler itself:
 
 .. code-block:: go
     
@@ -61,7 +61,7 @@ If you are using fasthttp_ with fasthttprouter_ you need to call the middleware 
 			ctx.Response.Header.Set("Content-Type", "application-json")
 			s, err := json.Marshal(s.Data())
 			if err != nil {
-					log.Fatal("Stats error")
+				log.Fatal("Stats error")
 			}
 			ctx.Write(s)
 			ctx.SetStatusCode(200)
