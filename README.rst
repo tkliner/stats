@@ -41,7 +41,7 @@ Usage
 Fasthttp and Fasthttprouter
 .......
 
-If you are using fasthttp_ with Fasthttprouter_ you need to call the middleware with the handler itself:
+If you are using fasthttp_ with fasthttprouter_ you need to call the middleware with the handler itself:
 
 .. code-block:: go
     
@@ -133,4 +133,4 @@ reset requests/sec and will implement new features in a near future :)
 Original package
 ----------------
 
-This is fork of the original package `thoas/stats https://github.com/thoas/stats`_, which was created as part of modification to be used with fasthttp and fasthttprouter
+This is fork of the original package `thoas/stats <https://github.com/thoas/stats>`_, which was created as part of modification to be used with fasthttp and fasthttprouter
