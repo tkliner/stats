@@ -2,10 +2,10 @@ package stats
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"sync"
 	"time"
+	"github.com/valyala/fasthttp"
 )
 
 // Stats data structure
@@ -47,32 +47,19 @@ func (mw *Stats) ResetResponseCounts() {
 }
 
 // Handler is a MiddlewareFunc makes Stats implement the Middleware interface.
-func (mw *Stats) Handler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		beginning, recorder := mw.Begin(w)
-
-		h.ServeHTTP(recorder, r)
-
+func (mw *Stats) Handler(h fasthttp.RequestHandler) fasthttp.RequestHandler {
+	return fasthttp.RequestHandler(func(ctx *fasthttp.RequestCtx) {
+		beginning, recorder := mw.Begin(ctx)
+		h(recorder)
 		mw.End(beginning, recorder)
 	})
 }
 
-// Negroni compatible interface
-func (mw *Stats) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	beginning, recorder := mw.Begin(w)
-
-	next(recorder, r)
-
-	mw.End(beginning, recorder)
-}
-
 // Begin starts a recorder
-func (mw *Stats) Begin(w http.ResponseWriter) (time.Time, ResponseWriter) {
+func (mw *Stats) Begin(ctx *fasthttp.RequestCtx) (time.Time, *fasthttp.RequestCtx) {
 	start := time.Now()
-
-	writer := NewRecorderResponseWriter(w, 200)
-
-	return start, writer
+	ctx.SetStatusCode(200)
+	return start, ctx
 }
 
 // EndWithStatus closes the recorder with a specific status
@@ -93,8 +80,8 @@ func (mw *Stats) EndWithStatus(start time.Time, status int) {
 }
 
 // End closes the recorder with the recorder status
-func (mw *Stats) End(start time.Time, recorder ResponseWriter) {
-	mw.EndWithStatus(start, recorder.Status())
+func (mw *Stats) End(start time.Time, ctx *fasthttp.RequestCtx) {
+	mw.EndWithStatus(start, ctx.Response.StatusCode())
 }
 
 // Data serializable structure
